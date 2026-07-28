@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#b9a3d9" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="LIN" />
+<title>LIN · 工作台</title>
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<style>
+  :root{
+    --bg-beige:#f7f3ec;
+    --bg-purple:#efe9f6;
+    --primary:#9a82c4;
+    --primary-deep:#7c63a8;
+    --text:#403a4d;
+    --text-soft:#807a8d;
+    --muted:#a8a2b4;
+    --hair:rgba(124,99,168,.16);
+    --hair-soft:rgba(124,99,168,.10);
+    --card:#ffffff;
+    --line:#ece8f2;
+    --ok:#6f9d83;
+    --danger:#c08292;
+    --shadow-soft:0 1px 2px rgba(64,58,77,.04), 0 10px 30px rgba(124,99,168,.06);
+    --radius:14px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    color:var(--text);
+    background:
+      radial-gradient(1100px 560px at 8% -8%, #f7f3ec 0%, transparent 52%),
+      radial-gradient(960px 640px at 112% 4%, #efe9f6 0%, transparent 50%),
+      linear-gradient(135deg,#f7f3ec 0%,#f1ebf5 55%,#efe9f6 100%);
+    background-attachment:fixed;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+    font-size:15px;
+  }
+  a{color:var(--primary-deep);text-decoration:none;}
+  .lic{flex:0 0 auto;vertical-align:-0.18em;}
+
+  /* ===== Layout ===== */
+  .app{display:flex;min-height:100vh;}
+  .sidebar{
+    width:226px;flex:0 0 226px;
+    background:rgba(255,255,255,.55);
+    backdrop-filter:blur(16px);
+    border-right:1px solid var(--line);
+    padding:calc(24px + env(safe-area-inset-top)) 14px calc(24px + env(safe-area-inset-bottom));
+    position:sticky;top:0;height:100vh;
+    display:flex;flex-direction:column;gap:6px;z-index:30;
+  }
+  .brand{display:flex;align-items:center;gap:12px;padding:4px 10px 20px;}
+  .brand .logo{
+    width:40px;height:40px;border-radius:11px;flex:0 0 40px;
+    border:1.5px solid var(--hair);
+    color:var(--primary-deep);font-weight:700;font-size:18px;letter-spacing:.5px;
+    display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.7);
+  }
+  .brand .name{font-weight:700;font-size:19px;letter-spacing:2px;}
+  .brand .sub{font-size:10px;color:var(--muted);letter-spacing:3px;margin-top:2px;}
+
+  .nav{display:flex;flex-direction:column;gap:3px;margin-top:2px;}
+  .nav-item{
+    display:flex;align-items:center;gap:12px;
+    padding:11px 13px;border-radius:11px;cursor:pointer;
+    color:var(--text-soft);font-size:14.5px;font-weight:600;
+    transition:.16s;user-select:none;border:1px solid transparent;
+  }
+  .nav-item .ico{width:19px;height:19px;flex:0 0 19px;color:var(--muted);}
+  .nav-item:hover{background:var(--hair-soft);color:var(--text);}
+  .nav-item.active{
+    background:var(--hair-soft);color:var(--primary-deep);
+    border-color:var(--hair);
+  }
+  .nav-item.active .ico{color:var(--primary-deep);}
+  .sidebar-foot{margin-top:auto;font-size:11px;color:var(--muted);padding:10px 12px;line-height:1.7;}
+
+  .main{flex:1;min-width:0;padding:calc(26px + env(safe-area-inset-top)) 32px 60px;max-width:1040px;}
+  .topbar{display:none;}
+  .page{display:none;animation:fade .3s ease;}
+  .page.active{display:block;}
+  @keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+
+  .page-head{margin-bottom:22px;}
+  .page-head h1{margin:0;font-size:23px;letter-spacing:.5px;font-weight:700;}
+  .page-head p{margin:7px 0 0;color:var(--text-soft);font-size:13.5px;}
+
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px 20px;box-shadow:var(--shadow-soft);
+  }
+  .card + .card{margin-top:16px;}
+  .section-title{font-size:14.5px;font-weight:700;margin:0 0 14px;display:flex;align-items:center;gap:9px;}
+  .section-title .dot{width:6px;height:6px;border-radius:50%;background:var(--primary);}
+
+  /* ===== Daily Plan ===== */
+  .add-row{display:flex;gap:10px;margin-bottom:16px;}
+  .add-row input{
+    flex:1;border:1px solid var(--line);border-radius:11px;padding:12px 14px;
+    font-size:14.5px;background:#fff;color:var(--text);outline:none;transition:.15s;
+  }
+  .add-row input:focus{border-color:var(--primary);}
+  .btn{
+    border:none;cursor:pointer;border-radius:11px;padding:11px 18px;font-size:14px;font-weight:600;
+    background:var(--primary-deep);color:#fff;transition:.15s;white-space:nowrap;
+    display:inline-flex;align-items:center;gap:7px;
+  }
+  .btn:hover{background:#6f58a0;}
+  .btn.ghost{background:#fff;color:var(--primary-deep);border:1px solid var(--hair);box-shadow:none;}
+  .btn.ghost:hover{background:var(--hair-soft);}
+  .btn.sm{padding:8px 13px;font-size:13px;border-radius:9px;}
+
+  .task{display:flex;align-items:center;gap:13px;padding:13px 14px;border-radius:12px;background:#fff;
+    border:1px solid var(--line);margin-bottom:9px;transition:.15s;}
+  .task:hover{border-color:var(--hair);}
+  .check{
+    width:21px;height:21px;border-radius:6px;border:1.6px solid var(--hair);flex:0 0 21px;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s;background:#fff;color:var(--primary-deep);
+  }
+  .check svg{width:13px;height:13px;opacity:0;transition:.15s;}
+  .task.done .check{background:var(--primary-deep);border-color:var(--primary-deep);}
+  .task.done .check svg{opacity:1;color:#fff;}
+  .task .txt{flex:1;font-size:14.5px;line-height:1.45;word-break:break-word;}
+  .task.done .txt{color:var(--muted);text-decoration:line-through;}
+  .task .date{font-size:11px;color:var(--muted);margin-right:4px;}
+  .del{
+    border:none;background:transparent;color:var(--muted);width:30px;height:30px;
+    border-radius:8px;cursor:pointer;flex:0 0 30px;transition:.15s;display:flex;align-items:center;justify-content:center;
+  }
+  .del:hover{background:rgba(192,130,146,.10);color:var(--danger);}
+  .empty{color:var(--muted);text-align:center;padding:28px;font-size:13.5px;}
+
+  /* ===== Books ===== */
+  .book-cat{margin-bottom:22px;}
+  .book-cat h3{font-size:12px;color:var(--text-soft);margin:0 0 12px;letter-spacing:3px;font-weight:700;text-transform:uppercase;}
+  .book-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:12px;}
+  .book{background:#fff;border:1px solid var(--line);border-radius:13px;padding:16px 17px;transition:.15s;display:flex;flex-direction:column;gap:7px;}
+  .book:hover{border-color:var(--hair);box-shadow:var(--shadow-soft);}
+  .book .tag{font-size:11px;color:var(--text-soft);border:1px solid var(--line);padding:2px 9px;border-radius:20px;align-self:flex-start;letter-spacing:.5px;}
+  .book .title{font-weight:700;font-size:15px;line-height:1.35;}
+  .book .author{font-size:12.5px;color:var(--text-soft);}
+  .book .desc{font-size:12.5px;color:var(--text-soft);line-height:1.55;flex:1;}
+  .book .go{margin-top:5px;font-size:12.5px;font-weight:600;color:var(--primary-deep);display:inline-flex;align-items:center;gap:5px;}
+  .book .go:hover{opacity:.7;}
+
+  /* ===== Review ===== */
+  .review-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .review-box{display:flex;flex-direction:column;}
+  .review-box label{font-size:13.5px;font-weight:700;margin-bottom:9px;display:flex;align-items:center;gap:8px;}
+  .review-box label .n{width:21px;height:21px;border-radius:6px;border:1px solid var(--hair);color:var(--primary-deep);font-size:12px;display:flex;align-items:center;justify-content:center;font-weight:700;}
+  .review-box textarea{
+    flex:1;min-height:118px;border:1px solid var(--line);border-radius:11px;padding:13px 14px;
+    font-size:14px;font-family:inherit;resize:vertical;outline:none;background:#fff;color:var(--text);line-height:1.6;transition:.15s;
+  }
+  .review-box textarea:focus{border-color:var(--primary);}
+  .saved-tip{font-size:11.5px;color:var(--ok);margin-top:8px;opacity:0;transition:.3s;}
+  .saved-tip.show{opacity:1;}
+
+  /* ===== Memo ===== */
+  .memo-write{margin-bottom:18px;}
+  .memo-write textarea{
+    width:100%;min-height:90px;border:1px solid var(--line);border-radius:11px;padding:13px 14px;
+    font-size:14px;font-family:inherit;resize:vertical;outline:none;background:#fff;color:var(--text);line-height:1.6;
+  }
+  .memo-write textarea:focus{border-color:var(--primary);}
+  .memo-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:10px;}
+  .memo-list{display:flex;flex-direction:column;gap:11px;}
+  .memo-item{background:#fff;border:1px solid var(--line);border-left:2px solid var(--primary);border-radius:11px;padding:13px 15px;transition:.15s;}
+  .memo-item:hover{border-color:var(--hair);}
+  .memo-item .body{font-size:14px;line-height:1.65;white-space:pre-wrap;word-break:break-word;}
+  .memo-item .meta{display:flex;justify-content:space-between;align-items:center;margin-top:9px;}
+  .memo-item .time{font-size:11.5px;color:var(--muted);}
+
+  /* ===== English ===== */
+  .en-tabs{display:flex;gap:7px;margin-bottom:18px;flex-wrap:wrap;}
+  .en-tab{padding:9px 16px;border-radius:10px;background:#fff;border:1px solid var(--line);cursor:pointer;font-size:13.5px;font-weight:600;color:var(--text-soft);transition:.15s;}
+  .en-tab.active{background:var(--primary-deep);color:#fff;border-color:var(--primary-deep);}
+  .en-panel{display:none;}
+  .en-panel.active{display:block;}
+
+  .word-card{background:#fff;border:1px solid var(--line);border-radius:15px;padding:28px;text-align:center;box-shadow:var(--shadow-soft);min-height:228px;display:flex;flex-direction:column;justify-content:center;gap:12px;}
+  .word-card .en{font-size:29px;font-weight:700;letter-spacing:.5px;}
+  .word-card .ph{font-size:14.5px;color:var(--text-soft);font-style:italic;}
+  .word-card .cn{font-size:17px;color:var(--primary-deep);font-weight:600;}
+  .word-card .ex{font-size:14px;color:var(--text-soft);line-height:1.6;margin-top:6px;}
+  .word-card .ex b{color:var(--text);font-weight:700;}
+  .en-controls{display:flex;gap:10px;margin-top:16px;justify-content:center;flex-wrap:wrap;}
+
+  .exam-progress{font-size:12.5px;color:var(--text-soft);text-align:center;margin-bottom:12px;}
+  .exam-card{background:#fff;border:1px solid var(--line);border-radius:15px;padding:30px 26px;text-align:center;box-shadow:var(--shadow-soft);min-height:236px;display:flex;flex-direction:column;justify-content:center;gap:14px;cursor:pointer;transition:.15s;}
+  .exam-card:hover{border-color:var(--hair);}
+  .exam-card .hint{font-size:12px;color:var(--muted);}
+  .exam-card .en{font-size:29px;font-weight:700;}
+  .exam-card .reveal{font-size:16px;color:var(--primary-deep);line-height:1.6;}
+  .exam-card .reveal .ex{font-size:13.5px;color:var(--text-soft);margin-top:8px;}
+
+  .review-stat{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;}
+  .stat{background:#fff;border:1px solid var(--line);border-radius:11px;padding:12px 18px;box-shadow:var(--shadow-soft);}
+  .stat .num{font-size:23px;font-weight:700;color:var(--primary-deep);}
+  .stat .lbl{font-size:12px;color:var(--text-soft);margin-top:2px;}
+  .review-item{display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid var(--line);border-radius:11px;padding:12px 15px;margin-bottom:9px;}
+  .review-item .w{font-weight:700;font-size:14.5px;}
+  .review-item .c{font-size:13px;color:var(--text-soft);}
+  .review-item .count{font-size:12px;border:1px solid var(--hair);color:var(--primary-deep);padding:3px 10px;border-radius:20px;font-weight:600;}
+
+  /* ===== Podcast ===== */
+  .pod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(282px,1fr));gap:13px;}
+  .pod{background:#fff;border:1px solid var(--line);border-radius:14px;padding:17px 18px;display:flex;flex-direction:column;gap:9px;transition:.15s;}
+  .pod:hover{border-color:var(--hair);box-shadow:var(--shadow-soft);}
+  .pod .phead{display:flex;align-items:center;gap:11px;}
+  .pod .pava{width:44px;height:44px;border-radius:12px;flex:0 0 44px;border:1px solid var(--hair);color:var(--primary-deep);font-weight:700;font-size:17px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.7);}
+  .pod .pname{font-weight:700;font-size:15px;}
+  .pod .phost{font-size:12.5px;color:var(--text-soft);}
+  .pod .pdesc{font-size:13px;color:var(--text-soft);line-height:1.55;flex:1;}
+  .pod audio{width:100%;margin-top:2px;height:34px;}
+  .pod .plink{font-size:12.5px;font-weight:600;color:var(--primary-deep);align-self:flex-start;display:inline-flex;align-items:center;gap:5px;}
+
+  /* ===== News ===== */
+  .news-meta{font-size:12.5px;color:var(--text-soft);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+  .news-meta .live{width:7px;height:7px;border-radius:50%;background:var(--primary);box-shadow:0 0 0 4px var(--hair-soft);}
+  .news-item{background:#fff;border:1px solid var(--line);border-left:2px solid var(--primary);border-radius:12px;padding:16px 18px;margin-bottom:12px;transition:.15s;}
+  .news-item:hover{border-color:var(--hair);}
+  .news-item .nt{font-weight:700;font-size:15.5px;line-height:1.45;margin-bottom:7px;}
+  .news-item .ns{font-size:13px;color:var(--text-soft);line-height:1.6;}
+  .news-item .nm{display:flex;justify-content:space-between;align-items:center;margin-top:11px;}
+  .news-item .src{font-size:11.5px;color:var(--muted);}
+  .news-item .more{font-size:12.5px;font-weight:600;display:inline-flex;align-items:center;gap:5px;}
+
+  /* ===== Mobile ===== */
+  .menu-btn{display:none;}
+  @media (max-width:820px){
+    .sidebar{position:fixed;left:0;top:0;height:100vh;transform:translateX(-100%);transition:.25s;box-shadow:var(--shadow-soft);width:240px;flex-basis:240px;padding:calc(24px + env(safe-area-inset-top)) 14px calc(24px + env(safe-area-inset-bottom));}
+    .sidebar.open{transform:none;}
+    .main{padding:14px 16px calc(70px + env(safe-area-inset-bottom));}
+    .topbar{display:flex;align-items:flex-start;gap:12px;position:sticky;top:0;z-index:25;background:rgba(247,243,236,.9);backdrop-filter:blur(10px);padding:calc(env(safe-area-inset-top) + 10px) 4px 10px 4px;margin:-14px -16px 16px;}
+    .menu-btn{width:40px;height:40px;border-radius:11px;border:1px solid var(--line);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:0 0 40px;}
+    .menu-btn span,.menu-btn span::before,.menu-btn span::after{content:"";display:block;width:18px;height:1.6px;background:var(--primary-deep);position:relative;}
+    .menu-btn span::before{position:absolute;top:-6px;}
+    .menu-btn span::after{position:absolute;top:6px;}
+    .topbar .t-name{font-weight:700;font-size:18px;letter-spacing:2px;}
+    .review-grid{grid-template-columns:1fr;}
+    .mask{display:none;position:fixed;inset:0;background:rgba(64,58,77,.32);z-index:20;}
+    .mask.show{display:block;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="logo">L</div>
+      <div><div class="name">LIN</div><div class="sub">WORKBENCH</div></div>
+    </div>
+    <nav class="nav" id="nav">
+      <div class="nav-item active" data-page="plan"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></svg>每日计划</div>
+      <div class="nav-item" data-page="books"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>书单</div>
+      <div class="nav-item" data-page="review"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6"/><path d="M9 16h6"/></svg>工作复盘</div>
+      <div class="nav-item" data-page="memo"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>备忘录</div>
+      <div class="nav-item" data-page="english"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.58 3.953a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg>英语学习</div>
+      <div class="nav-item" data-page="podcast"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg>播客收听</div>
+      <div class="nav-item" data-page="news"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8M15 18h-5M10 6h8v4h-8V6z"/></svg>每日资讯</div>
+    </nav>
+    <div class="sidebar-foot">LIN 工作台 · 你的专属空间<br>数据保存在本机浏览器</div>
+  </aside>
+  <div class="mask" id="mask"></div>
+
+  <!-- Main -->
+  <main class="main">
+    <div class="topbar">
+      <button class="menu-btn" id="menuBtn"><span></span></button>
+      <span class="t-name">LIN</span>
+    </div>
+
+    <!-- 每日计划 -->
+    <section class="page active" id="page-plan">
+      <div class="page-head"><h1>每日计划</h1><p>勾选完成的事项，按需新增或删除任务。</p></div>
+      <div class="card">
+        <div class="add-row">
+          <input id="planInput" placeholder="添加一项今日任务，回车确认…" />
+          <button class="btn" id="planAdd"></button>
+        </div>
+        <div id="planList"></div>
+      </div>
+    </section>
+
+    <!-- 书单 -->
+    <section class="page" id="page-books">
+      <div class="page-head"><h1>书单</h1><p>为你精选女性成长 / 心灵治愈 / 近期热销小说，点击可前往微信读书。</p></div>
+      <div id="bookWrap"></div>
+    </section>
+
+    <!-- 工作复盘 -->
+    <section class="page" id="page-review">
+      <div class="page-head"><h1>工作复盘</h1><p>四个固定分区，输入即自动保存（按当天日期归档）。</p></div>
+      <div class="card">
+        <div class="review-grid">
+          <div class="review-box"><label><span class="n">1</span>完成了什么</label><textarea data-rk="done" placeholder="今天达成了哪些成果…"></textarea><div class="saved-tip">已保存</div></div>
+          <div class="review-box"><label><span class="n">2</span>问题 & 阻碍</label><textarea data-rk="block" placeholder="遇到了什么困难/卡点…"></textarea><div class="saved-tip">已保存</div></div>
+          <div class="review-box"><label><span class="n">3</span>下次改进</label><textarea data-rk="improve" placeholder="下次可以怎么做更好…"></textarea><div class="saved-tip">已保存</div></div>
+          <div class="review-box"><label><span class="n">4</span>高光时刻</label><textarea data-rk="shine" placeholder="今天值得记录的亮点…"></textarea><div class="saved-tip">已保存</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 备忘录 -->
+    <section class="page" id="page-memo">
+      <div class="page-head"><h1>备忘录</h1><p>随时记录想留下来的事，自动按时间排序。</p></div>
+      <div class="card memo-write">
+        <textarea id="memoInput" placeholder="此刻想记录点什么…"></textarea>
+        <div class="memo-actions">
+          <button class="btn ghost" id="memoClear">清空输入</button>
+          <button class="btn" id="memoSave"></button>
+        </div>
+      </div>
+      <div class="memo-list" id="memoList"></div>
+    </section>
+
+    <!-- 英语学习 -->
+    <section class="page" id="page-english">
+      <div class="page-head"><h1>英语学习</h1><p>每日单词与句子：学习 · 考核 · 回顾。</p></div>
+      <div class="en-tabs">
+        <div class="en-tab active" data-en="learn">学习</div>
+        <div class="en-tab" data-en="exam">考核</div>
+        <div class="en-tab" data-en="review">回顾</div>
+      </div>
+      <div class="en-panel active" id="en-learn">
+        <div class="card">
+          <div class="word-card" id="learnCard"></div>
+          <div class="en-controls">
+            <button class="btn ghost sm" id="learnPrev">上一个</button>
+            <button class="btn" id="learnNext">下一个</button>
+          </div>
+        </div>
+      </div>
+      <div class="en-panel" id="en-exam">
+        <div class="exam-progress" id="examProgress"></div>
+        <div class="card" style="padding:0;border:none;background:none;box-shadow:none;">
+          <div class="exam-card" id="examCard">
+            <div class="hint">点击卡片翻面查看答案</div>
+            <div class="en" id="examEn"></div>
+            <div class="reveal" id="examReveal" style="display:none;"></div>
+          </div>
+          <div class="en-controls" id="examBtns" style="display:none;">
+            <button class="btn ghost" id="examForget"></button>
+            <button class="btn" id="examKnow"></button>
+          </div>
+        </div>
+      </div>
+      <div class="en-panel" id="en-review">
+        <div class="review-stat" id="reviewStat"></div>
+        <div id="reviewList"></div>
+      </div>
+    </section>
+
+    <!-- 播客收听 -->
+    <section class="page" id="page-podcast">
+      <div class="page-head"><h1>播客收听</h1><p>精选热播播客，可在线试听或前往平台订阅。</p></div>
+      <div class="pod-grid" id="podGrid"></div>
+    </section>
+
+    <!-- 每日资讯 -->
+    <section class="page" id="page-news">
+      <div class="page-head"><h1>每日资讯</h1><p>亚马逊与电商风向精选，更新于 <span id="newsDate"></span>。</p></div>
+      <div class="news-meta"><span class="live"></span> 实时抓取 · 电商与跨境风向</div>
+      <div id="newsList"></div>
+    </section>
+  </main>
+</div>
+
+<script>
+/* ============ 线性图标（Lucide 风格） ============ */
+const ICONS = {
+  check:'<path d="M20 6 9 17l-5-5"/>',
+  x:'<path d="M18 6 6 18"/><path d="M6 6l12 12"/>',
+  plus:'<path d="M5 12h14"/><path d="M12 5v14"/>',
+  arrow:'<path d="M7 7h10v10"/><path d="M7 17 17 7"/>',
+  rotate:'<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>',
+  book:'<path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/>',
+  clipboard:'<rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6"/><path d="M9 16h6"/>',
+  pen:'<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+  grad:'<path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.58 3.953a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/>',
+  headphones:'<path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/>',
+  news:'<path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8M15 18h-5M10 6h8v4h-8V6z"/>'
+};
+function icon(name, size){ size=size||18; return `<svg class="lic" viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[name]||''}</svg>`; }
+
+/* ============ 通用：本地存储 ============ */
+const LS = {
+  get(k, d){ try{ return JSON.parse(localStorage.getItem('lin_'+k)) ?? d; }catch(e){ return d; } },
+  set(k, v){ localStorage.setItem('lin_'+k, JSON.stringify(v)); }
+};
+const today = () => new Date().toISOString().slice(0,10);
+const fmtTime = (ts) => { const d=new Date(ts); const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`; };
+const esc = (s) => String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* 按钮文案（带线性图标） */
+document.getElementById('planAdd').innerHTML = icon('plus',16)+'添加';
+document.getElementById('memoSave').innerHTML = icon('pen',16)+'保存备忘';
+document.getElementById('examForget').innerHTML = icon('rotate',16)+'忘记了';
+document.getElementById('examKnow').innerHTML = icon('check',16)+'知道';
+
+/* ============ 导航 ============ */
+const nav = document.getElementById('nav');
+const sidebar = document.getElementById('sidebar');
+const mask = document.getElementById('mask');
+function goPage(p){
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active', n.dataset.page===p));
+  document.querySelectorAll('.page').forEach(s=>s.classList.toggle('active', s.id==='page-'+p));
+  if(p==='news') renderNews();
+  if(p==='english') switchEn('learn');
+  sidebar.classList.remove('open'); mask.classList.remove('show');
+  window.scrollTo(0,0);
+}
+nav.addEventListener('click', e=>{ const it=e.target.closest('.nav-item'); if(it) goPage(it.dataset.page); });
+document.getElementById('menuBtn')?.addEventListener('click', ()=>{ sidebar.classList.add('open'); mask.classList.add('show'); });
+mask.addEventListener('click', ()=>{ sidebar.classList.remove('open'); mask.classList.remove('show'); });
+
+/* ============ 1. 每日计划 ============ */
+let plan = LS.get('plan', []);
+const planList = document.getElementById('planList');
+function renderPlan(){
+  if(!plan.length){ planList.innerHTML='<div class="empty">还没有任务，添加一项开始今天吧</div>'; return; }
+  planList.innerHTML = plan.map(t=>`
+    <div class="task ${t.done?'done':''}" data-id="${t.id}">
+      <div class="check" data-act="toggle">${icon('check',13)}</div>
+      <div class="txt">${esc(t.text)}</div>
+      <span class="date">${t.date}</span>
+      <button class="del" data-act="del" aria-label="删除">${icon('x',16)}</button>
+    </div>`).join('');
+}
+planList.addEventListener('click', e=>{
+  const row=e.target.closest('.task'); if(!row) return; const id=row.dataset.id;
+  const act=e.target.closest('[data-act]')?.dataset.act;
+  if(act==='toggle'){ const t=plan.find(x=>x.id===id); t.done=!t.done; }
+  else if(act==='del'){ plan=plan.filter(x=>x.id!==id); }
+  LS.set('plan', plan); renderPlan();
+});
+function addPlan(){
+  const inp=document.getElementById('planInput'); const v=inp.value.trim();
+  if(!v) return;
+  plan.unshift({id:'p'+Date.now(), text:v, done:false, date:today()});
+  LS.set('plan', plan); inp.value=''; renderPlan();
+}
+document.getElementById('planAdd').addEventListener('click', addPlan);
+document.getElementById('planInput').addEventListener('keydown', e=>{ if(e.key==='Enter') addPlan(); });
+renderPlan();
+
+/* ============ 2. 书单 ============ */
+const books = [
+  {cat:'女性成长', title:'始于极限', author:'上野千鹤子 / 铃木凉美', desc:'两代女性的书信往复，坦诚讨论独立、恋爱与自我确立。'},
+  {cat:'女性成长', title:'基层女性', author:'王慧玲', desc:'从真实处境出发，聊聊女性如何挣脱环境、掌握自己的人生。'},
+  {cat:'女性成长', title:'你当像鸟飞往你的山', author:'塔拉·韦斯特弗', desc:'一个关于教育如何重塑自我的真实成长故事。'},
+  {cat:'心灵治愈', title:'被讨厌的勇气', author:'岸见一郎 / 古贺史健', desc:'用阿德勒心理学，教你获得被讨厌也自由的勇气。'},
+  {cat:'心灵治愈', title:'蛤蟆先生去看心理医生', author:'罗伯特·戴博德', desc:'借童话般的咨询故事，温柔地照见自己的内心。'},
+  {cat:'心灵治愈', title:'也许你该找个人聊聊', author:'洛莉·戈特利布', desc:'心理咨询师的疗愈手记，关于痛苦、改变与连接。'},
+  {cat:'近期热销小说', title:'长安的荔枝', author:'马伯庸', desc:'一骑红尘妃子笑背后的小人物博弈，紧张又好看。'},
+  {cat:'近期热销小说', title:'太白金星有点烦', author:'马伯庸', desc:'神仙也要做项目，一本职场寓言式的小说。'},
+  {cat:'近期热销小说', title:'天堂旅行团', author:'张嘉佳', desc:'失意之人互相救赎的公路旅程，温柔催泪。'}
+];
+const bookWrap = document.getElementById('bookWrap');
+const cats = ['女性成长','心灵治愈','近期热销小说'];
+bookWrap.innerHTML = cats.map(c=>`
+  <div class="book-cat">
+    <h3>${c}</h3>
+    <div class="book-grid">
+      ${books.filter(b=>b.cat===c).map(b=>`
+        <div class="book">
+          <span class="tag">${b.cat}</span>
+          <div class="title">${b.title}</div>
+          <div class="author">${b.author}</div>
+          <div class="desc">${b.desc}</div>
+          <a class="go" href="https://weread.qq.com/web/search/books?keyword=${encodeURIComponent(b.title)}" target="_blank" rel="noopener">${icon('arrow',15)}在微信读书查看</a>
+        </div>`).join('')}
+    </div>
+  </div>`).join('');
+
+/* ============ 3. 工作复盘 ============ */
+const reviewBoxes = document.querySelectorAll('.review-box textarea');
+reviewBoxes.forEach(ta=>{
+  const key = today()+'_'+ta.dataset.rk;
+  ta.value = LS.get('review_'+key, '');
+  ta.addEventListener('input', ()=>{
+    LS.set('review_'+key, ta.value);
+    const tip = ta.parentElement.querySelector('.saved-tip');
+    tip.classList.add('show'); clearTimeout(ta._t); ta._t=setTimeout(()=>tip.classList.remove('show'),1200);
+  });
+});
+
+/* ============ 4. 备忘录 ============ */
+let memos = LS.get('memo', []);
+const memoList = document.getElementById('memoList');
+function renderMemo(){
+  if(!memos.length){ memoList.innerHTML='<div class="empty">还没有备忘，写下第一条吧</div>'; return; }
+  memoList.innerHTML = memos.map(m=>`
+    <div class="memo-item" data-id="${m.id}">
+      <div class="body">${esc(m.text)}</div>
+      <div class="meta"><span class="time">${fmtTime(m.ts)}</span><button class="del" data-act="mdel" aria-label="删除">${icon('x',16)}</button></div>
+    </div>`).join('');
+}
+memoList.addEventListener('click', e=>{
+  if(e.target.dataset.act==='mdel'){ const id=e.target.closest('.memo-item').dataset.id; memos=memos.filter(m=>m.id!==id); LS.set('memo',memos); renderMemo(); }
+});
+document.getElementById('memoSave').addEventListener('click', ()=>{
+  const inp=document.getElementById('memoInput'); const v=inp.value.trim(); if(!v) return;
+  memos.unshift({id:'m'+Date.now(), text:v, ts:Date.now()}); LS.set('memo',memos); inp.value=''; renderMemo();
+});
+document.getElementById('memoClear').addEventListener('click', ()=>{ document.getElementById('memoInput').value=''; });
+renderMemo();
+
+/* ============ 5. 英语学习 ============ */
+const WORDS = [
+  {en:'resilient', ph:'/rɪˈzɪliənt/', cn:'有韧性的；能恢复的', ex:'She is <b>resilient</b> and bounces back from setbacks.'},
+  {en:'efficient', ph:'/ɪˈfɪʃnt/', cn:'高效的；效率高的', ex:'An <b>efficient</b> workflow saves you time.'},
+  {en:'ambition', ph:'/æmˈbɪʃn/', cn:'雄心；抱负', ex:'His <b>ambition</b> drove him to start a company.'},
+  {en:'perspective', ph:'/pərˈspektɪv/', cn:'视角；观点', ex:'Traveling broadens your <b>perspective</b>.'},
+  {en:'prioritize', ph:'/praɪˈɔːrətaɪz/', cn:'优先处理；排序', ex:'Learn to <b>prioritize</b> your daily tasks.'},
+  {en:'momentum', ph:'/moʊˈmentəm/', cn:'势头；动力', ex:'The project gained <b>momentum</b> after launch.'},
+  {en:'concise', ph:'/kənˈsaɪs/', cn:'简洁的；简明的', ex:'Keep your email <b>concise</b> and clear.'},
+  {en:'adapt', ph:'/əˈdæpt/', cn:'适应；调整', ex:'We must <b>adapt</b> to constant change.'},
+  {en:'diligent', ph:'/ˈdɪlɪdʒənt/', cn:'勤奋的；用功的', ex:'A <b>diligent</b> learner studies every day.'},
+  {en:'insightful', ph:'/ˈnsaɪtfəl/', cn:'有洞察力的', ex:'She gave an <b>insightful</b> analysis.'},
+  {en:'leverage', ph:'/ˈlevərɪdʒ/', cn:'利用；撬动', ex:'<b>Leverage</b> your strengths to win.'},
+  {en:'proactive', ph:'/proʊˈæktɪv/', cn:'主动的；前瞻的', ex:'Be <b>proactive</b> about solving problems.'},
+  {en:'sustainable', ph:'/səˈsteɪnəbl/', cn:'可持续的', ex:'Build a <b>sustainable</b> daily habit.'},
+  {en:'clarity', ph:'/ˈklærəti/', cn:'清晰；明了', ex:'<b>Clarity</b> of goals is powerful.'},
+  {en:'endeavor', ph:'/ɪnˈdevər/', cn:'努力；尝试', ex:'We <b>endeavor</b> to improve each day.'}
+];
+const SENTENCES = [
+  'The early bird catches the worm. 早起的鸟儿有虫吃。',
+  'Progress, not perfection. 重在点滴进步，而非完美。',
+  'Small steps every day lead to big results. 每日一小步，终成大事。',
+  'Done is better than perfect. 完成好过完美。',
+  'Stay hungry, stay foolish. 求知若饥，虚心若愚。'
+];
+let learnIdx = 0;
+const learnCard = document.getElementById('learnCard');
+function renderLearn(){
+  const items = WORDS.concat(SENTENCES.map(s=>({en:s.split('  ')[0], ph:'', cn:s.split('  ').slice(1).join('  '), ex:''})));
+  const w = items[learnIdx];
+  learnCard.innerHTML = `<div class="en">${w.en}</div>${w.ph?`<div class="ph">${w.ph}</div>`:''}${w.cn?`<div class="cn">${w.cn}</div>`:''}${w.ex?`<div class="ex">${w.ex}</div>`:''}<div class="hint" style="font-size:12px;color:var(--muted)">${learnIdx+1} / ${items.length}</div>`;
+}
+document.getElementById('learnNext').addEventListener('click', ()=>{ learnIdx++; const n=WORDS.length+SENTENCES.length; if(learnIdx>=n) learnIdx=0; renderLearn(); });
+document.getElementById('learnPrev').addEventListener('click', ()=>{ learnIdx--; const n=WORDS.length+SENTENCES.length; if(learnIdx<0) learnIdx=n-1; renderLearn(); });
+renderLearn();
+
+let examQueue = [], examLog = LS.get('enlog', {});
+function startExam(){
+  examQueue = WORDS.map(w=>w.en);
+  examLog = LS.get('enlog', {});
+  stepExam();
+}
+function stepExam(){
+  const prog = document.getElementById('examProgress');
+  const card = document.getElementById('examCard');
+  const btns = document.getElementById('examBtns');
+  const reveal = document.getElementById('examReveal');
+  if(!examQueue.length){
+    prog.textContent='本轮考核完成，去「回顾」看看学习情况吧';
+    card.innerHTML='<div class="en" style="font-size:21px">已全部掌握，太棒了！</div>';
+    btns.style.display='none'; return;
+  }
+  prog.textContent = `剩余 ${examQueue.length} 个 · 点击卡片翻面`;
+  const en = examQueue[0];
+  const w = WORDS.find(x=>x.en===en);
+  card.querySelector('.hint').textContent='点击卡片翻面查看答案';
+  card.querySelector('.en').textContent = en;
+  card.querySelector('.en').className='en';
+  reveal.style.display='none';
+  reveal.innerHTML = `<div>${w.cn}</div><div class="ex">${w.ex}</div>`;
+  btns.style.display='none';
+  card.onclick = ()=>{
+    reveal.style.display='block';
+    card.querySelector('.hint').textContent='记得怎么样？';
+    btns.style.display='flex';
+  };
+}
+document.getElementById('examKnow').addEventListener('click', ()=>{
+  const en = examQueue.shift();
+  examLog[en] = (examLog[en]||0)+1;
+  LS.set('enlog', examLog); stepExam();
+});
+document.getElementById('examForget').addEventListener('click', ()=>{
+  const en = examQueue.shift();
+  examQueue.push(en);
+  examLog[en] = (examLog[en]||0)+1;
+  LS.set('enlog', examLog); stepExam();
+});
+
+function renderReview(){
+  const stat = document.getElementById('reviewStat');
+  const list = document.getElementById('reviewList');
+  const keys = Object.keys(examLog);
+  stat.innerHTML = `
+    <div class="stat"><div class="num">${keys.length}</div><div class="lbl">今日学习词数</div></div>
+    <div class="stat"><div class="num">${keys.reduce((s,k)=>s+examLog[k],0)}</div><div class="lbl">累计学习次数</div></div>`;
+  if(!keys.length){ list.innerHTML='<div class="empty">今天还没开始学习，去「学习」或「考核」吧</div>'; return; }
+  list.innerHTML = keys.sort((a,b)=>examLog[b]-examLog[a]).map(k=>`
+    <div class="review-item">
+      <div><div class="w">${k}</div><div class="c">${WORDS.find(x=>x.en===k)?.cn||''}</div></div>
+      <span class="count">学习 ${examLog[k]} 次</span>
+    </div>`).join('');
+}
+function switchEn(tab){
+  document.querySelectorAll('.en-tab').forEach(t=>t.classList.toggle('active', t.dataset.en===tab));
+  document.querySelectorAll('.en-panel').forEach(p=>p.classList.toggle('active', p.id==='en-'+tab));
+  if(tab==='exam') startExam();
+  if(tab==='review') renderReview();
+}
+document.querySelectorAll('.en-tab').forEach(t=>t.addEventListener('click', ()=>switchEn(t.dataset.en)));
+
+/* ============ 6. 播客收听 ============ */
+const SAMPLE = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3';
+const pods = [
+  {n:'故事FM', h:'主播：寇爱哲', d:'用真实声音记录普通人的故事，温柔又有力量。', c:'文化·故事'},
+  {n:'随机波动', h:'三位媒体人', d:'从女性视角聊书、电影与社会热点，思辨又亲切。', c:'文化·访谈'},
+  {n:'不合时宜', h:'徐涛 / 若含 等', d:'解读新闻与文化现象，帮你看见时代褶皱。', c:'时事·文化'},
+  {n:'螺丝在拧紧', h:'主播：吴琦', d:'深度文化对谈，嘉宾阵容很强。', c:'文化·访谈'},
+  {n:'谐星聊天会', h:'多位脱口秀演员', d:'轻松爆笑的聊天综艺，通勤解压首选。', c:'喜剧·闲聊'},
+  {n:'商业就是这样', h:'肖文杰 / 约小亚', d:'用通俗语言讲清商业逻辑与行业变化。', c:'商业·财经'}
+];
+document.getElementById('podGrid').innerHTML = pods.map(p=>`
+  <div class="pod">
+    <div class="phead"><div class="pava">${p.n[0]}</div>
+      <div><div class="pname">${p.n}</div><div class="phost">${p.h}</div></div></div>
+    <div class="pdesc">${p.d}</div>
+    <audio controls preload="none" src="${SAMPLE}"></audio>
+    <a class="plink" href="https://www.xiaoyuzhoufm.com/search?q=${encodeURIComponent(p.n)}" target="_blank" rel="noopener">${icon('arrow',15)}去小宇宙收听</a>
+  </div>`).join('');
+
+/* ============ 7. 每日资讯 ============ */
+const NEWS = [
+  {t:'亚马逊发布 2026「新四大战略」，重塑跨境底层逻辑', s:'从「下一代跨境链」到 AI 全链路工具升级，再到智能枢纽仓落地深圳，卖家全球统一运营成趋势。', src:'跨境资讯 · 2025-12', u:'https://www.sohu.com/a/962168761_121123800'},
+  {t:'2026 中国出口跨境电商趋势报告：专业化竞争来临', s:'从铺货到品牌出海，再到 2026 年的系统化能力竞争，卖家比拼供应链与本地化。', src:'亚马逊全球开店 · 趋势', u:'https://gs.amazon.cn/news/summary'},
+  {t:'Q2 政策盘点：FBA 仓储费上调、广告 CPC 走高', s:'2026 Q2 多项政策调整预计推高卖家综合成本 15%–20%，含退货处理费扩至全品类。', src:'CocoLoop · 2026-05', u:'https://ask.cocoloop.cn/news/amazon-2026-q2-policy-changes'},
+  {t:'AI 重塑跨境战场：基础运营环节逐步被替代', s:'AI 工具接管选品、文案与客服，卖家需向品牌体验与供应链升级。', src:'雪球 · 2025-12', u:'https://xueqiu.com/1553736910/365925675'},
+  {t:'美国站自配送政策更新，时效与备货门槛收紧', s:'6 月起美国站卖家自配送政策更新，配送时效与备货要求更严格。', src:'亚马逊全球开店', u:'https://gs.amazon.cn/news/summary'}
+];
+function renderNews(){
+  document.getElementById('newsDate').textContent = new Date().toLocaleDateString('zh-CN');
+  document.getElementById('newsList').innerHTML = NEWS.map(n=>`
+    <div class="news-item">
+      <div class="nt">${n.t}</div>
+      <div class="ns">${n.s}</div>
+      <div class="nm"><span class="src">来源：${n.src}</span><a class="more" href="${n.u}" target="_blank" rel="noopener">${icon('arrow',15)}查看原文</a></div>
+    </div>`).join('');
+}
+
+/* ============ PWA 注册 ============ */
+if('serviceWorker' in navigator){ window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); }); }
+</script>
+</body>
+</html>
